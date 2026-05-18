@@ -1,0 +1,200 @@
+    5  ls
+    6  find 00-installer-config.yaml.swp
+    7  find 00-installer-config.yaml.swp /
+    8  sudo find 00-installer-config.yaml.swp /
+    9  sudo find 00-installer-config.yaml /
+   10  sudo find / -name 00-installer-config.yaml
+   11  sudo find / -name 00-installer-config.yaml.swp
+   12  sudo vim 00-installer-config.yaml
+   13  clear
+   14  sudo netplan apply
+   15  exit
+   16  cd /etc/netplan
+   17  ls
+   18  ls | xargs sudo vim
+   19  sudo restart netplan
+   20  restart netplan
+   21  sudo netplan apply
+   22  ip -a
+   23  ip a
+   24  sudo netplan apply
+   25  ip link show
+   26  ls | xargs sudo vim
+   27  hosname
+   28  hostname
+   29  cat /etc/macing-id
+   30  cat /etc/machine-id
+   31  sudo cat /root/orig-machine-id
+   32  sudo cp -p /etc/machine-id /root/SVR-01-orig-machine-id
+   33  sudo cat /root/SVR-01-orig-machine-id
+   34  sudo cat /dev/null > /etc/machine-id 
+   35  sudo su
+   36  cat /etc/machine-id
+   37  sudo sa
+   38  sudo su
+   39  cat /etc/machine-id
+   40  sudo reboot
+   41  cat /etc/machine-id
+   42  exit
+   43  lsubs
+   44  lsusb
+   45  sudo adduser $USER vboxusers
+   46  lsusb
+   47  lsblk
+   48  lsusb
+   49  mkidr /media/backup-usb
+   50  mkidr /media/backup-usb/
+   51  mkdir /media/backup-usb/
+   52  sudo mkdir /media/backup-usb/
+   53  ls media
+   54  ls /media
+   55  ls /media/backup-usb/
+   56  ls /media/backup-usb
+   57  df -t
+   58  df -T
+   59  df
+   60  lsblk
+   61  sudo parted -l
+   62  parted
+   63  sudo parted
+   64  sudo parted /dev/sdb
+   65  lsusb
+   66  lsblk
+   67  sudo mkfs -t ext4 -L backup-usb /dev/sdb
+   68  sudo mount backup-usb /media/backup-usb
+   69  sudo mount -L backup-usb /media/backup-usb
+   70  sudo parted /dev/sdb
+   71  df -h
+   72  df -Th
+   73  lsblk -f
+   74  find /media/backup-usb
+   75  vmadmin@SVR-01:~$ sudo mount -L backup-usb /media/backup-usb
+   76  mount: /media/backup-usb: wrong fs type, bad option, bad superblock on /dev/sdb, missing codepage or helper program, or other error.
+   77  vmadmin@SVR-01:~$ sudo parted /dev/sdb
+   78  sudo mount -L backup-usb /media/backup-usb
+   79  sudo mkdir -p /media/backup-usb
+   80  ls media
+   81  ls /media
+   82  sudo mount -L backup-usb /media/backup-usb
+   83  dmesg | tail -n 15
+   84  sudo dmesg | tail -n 15
+   85  sudo mkfs -t ext4 -L backup-usb /dev/sdb
+   86  sudo mount -L backup-usb /media/backup-usb
+   87  sudo mkfs -t ext4 -O ^has_journal -L backup-usb /dev/sdb
+   88  sudo mount -L backup-usb /media/backup-usb
+   89  sudo mkfs -t ext4 -L backup-usb /dev/sdb
+   90  sudo unmount -L backup-usb /media/backup-usb
+   91  sudo unmount /media/backup-usb
+   92  sudo umount /media/backup-usb
+   93  sudo mkfs -t ext4 -L backup-usb /dev/sdb
+   94  dmeg
+   95  dmesg
+   96  sudo dmesg
+   97  sudo mkfs -t ext4 -cc -O ^has_journal -L backup-usb /dev/sdb
+   98  df -f
+   99  df 
+  100  df -Th
+  101  lsblk
+  102  sudo mkfs -t ext4 -cc -O ^has_journal -L backup-usb /dev/sdb
+  103  sudo mkfs.ext4 -cc -O ^has_journal -L backup-usb /dev/sdb
+  104  sudo mkfs -t ext4  -L backup-usb /dev/sdb
+  105  dmesg
+  106  sudo dmesg
+  107  sudo dmesg head -15
+  108  sudo dmesg head-15
+  109  sudo dmesg | grep head-15
+  110  sudo dmesg | grep head - 15
+  111  sudo mount -L backup-usb /media/backup-usb
+  112  sudo dmesg
+  113  mkfs.ext4 /dev/sdb
+  114  sudo mkfs.ext4 /dev/sdb
+  115  sudo mount -L backup-usb /media/backup-usb
+  116  sudo mount /dev/sdb /media/backup-usb
+  117  sudo mkfs -t ext4 -E lazy_itable_init=0,lazy_journal_init=0 -L backup-usb /dev/sdb
+  118  sudo mkfs -t ext4 -L backup-usb /dev/sdb
+  119  dmesg
+  120  sudo dmesg
+  121  sudo mount -L backup-usb /media/backup-usb
+  122  sudo fsck.ext4 -fy /dev/sdb
+  123  sudo mount -L backup-usb /media/backup-usb
+  124  sudo mkfs -t ext4 -E lazy_itable_init=0,lazy_journal_init=0 -L backup-usb /dev/sdb
+  125  sudo partprobe /dev/sdb
+  126  sudo mount -L backup-usb /media/backup-usb
+  127  sudo mkfs -t ext4 -L backup-usb /dev/sdb
+  128  sudo mount -L backup-usb /media/backup-usb
+  129  sudo fsck.ext4 -fy /dev/sdb
+  130  sudo partprobe /dev/sdb
+  131  sudo mount -L backup-usb /media/backup-usb
+  132  sudo mount -L backup-usb /media/backup-usb
+  133  sudo partprobe /dev/sdb
+  134  sudo partprobe /dev/sdb
+  135  sudo mount -L backup-usb /media/backup-usb
+  136  sudo mkfs -t ext4 -E lazy_itable_init=0,lazy_journal_init=0 -L backup-usb /dev/sdb
+  137  sudo mount -L backup-usb /media/backup-usb
+  138  sudo partprobe /dev/sdb
+  139  sudo mount -L backup-usb /media/backup-usb
+  140  sudo dd if=/dev/zero of=/dev/sdb bs=1M count=10 status=progress
+  141  sudo partprobe /dev/sdb
+  142  sudo fdisk /dev/sdb
+  143  sudo mkfs.ext4 -E lazy_itable_init=0,lazy_journal_init=0 -L backup-usb /dev/sdb1
+  144  sudo mount -L backup-usb /media/backup-usb
+  145  sudo mount -L backup-usb /media/backup-usb
+  146  sudo mkfs.ext4 -O ^has_journal -L backup-usb /dev/sdb1
+  147  sudo mkfs.ext4 -O ^has_journal -L backup-usb /dev/sdb1
+  148  sudo mount -L backup-usb /media/backup-usb
+  149  sudo mkfs.ext4 -O ^has_journal -L backup-usb /dev/sdb1
+  150  cd /media/backup-usb
+  151  ls
+  152  cd ..
+  153  cd~
+  154  cd ~
+  155  df -f
+  156  df -h
+  157  VBoxManage modifyvm SVR-01 --vrde on
+  158  sudo apt install virtualbox
+  159  VboxHeadless
+  160  VBoxHeadless
+  161  & "C:\Program Files\Oracle\VirtualBox\VBoxManage.exe" list vms
+  162  exit
+  163  sudo apt update
+  164  sudo apt install git -y
+  165  git config --global user.name "Abdelmoiz Alilouh"
+  166  git config --global user.email "alilouchabdlmoiz@gmail.com"
+  167  mkdir -p ~/infrastructure-project
+  168  cd ~/infrastructure-project
+  169  cd ~/infrastructure-project
+  170  git init
+  171  git init
+  172  git add .
+  173  git add .
+  174  git commit -m "feat: complete week 1 infrastructure setup and template configuration"
+  175  git commit -m "feat: complete week 1 infrastructure setup and template configuration"
+  176  git branch -M main
+  177 git branch -M main
+  178  git branch -M main
+  179  git remote add origin https://github.com/your-username/repository-name.git
+  180  git init
+  181  rm -rf ~/.git
+  182  mkdir -p ~/infrastructure-project
+  183  cd ~/infrastructure-project
+  184  git init
+  185  git commit -m "firt week: project infirastructure"
+  186  git add .
+  187  git branch -M main
+  188  git remote add origin https://github.com/alilouchabdelmoiz-dev/abdelmoiz-private-business-cloud-infrastructure.git
+  189  git remote set-url origin https://github.com/alilouchabdelmoiz-dev/abdelmoiz-private-business-cloud-infrastructure.git
+  190  git remote -v
+  191  git push -u origin main
+  192  echo "# Abdelmoiz Private Business Cloud Infrastructure" > README.md
+  193  git add README.md
+  194  git commit -m "feat: initial commit with readme"
+  195  git branch -M main
+  196  git push -u origin main
+  197  cd ..
+  198  ls
+  199  rm config.test
+  200  cp /etc/netplan/*.yaml ~/infrastructure-project/netplan-config.yaml
+  201  sudo cp /etc/netplan/*.yaml ~/infrastructure-project/netplan-config.yaml
+  202  cat /etc/fstab > ~/infrastructure-project/fstab-backup.txt
+  203  cat /etc/fstab
+  204  history | tail -n 200 > ~/infrastructure-project/week1-history.txt
