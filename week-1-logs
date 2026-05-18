@@ -54,18 +54,18 @@ The key's randomart image is:
 ```
 I manually set the permissions (`600` for keys, `700` for directory) so Linux wouldn't reject them.
 
-```bash
+```powershell
 type "$HOME\.ssh\id_ed25519.pub" | ssh vmadmin@192.168.56.4 "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"
 ```
 
 I also set a ssh-agent to avoid writing passphrase manually
-```bash
+```powrshell
 ssh-agent (automatic) Get-Service -Name ssh-agent | Set-Service -StartupType Automatic
 ```
 
 Then I locked down `/etc/ssh/sshd_config` to kill password logins:
 
-```bash
+```
 PasswordAuthentication no
 KbdInteractiveAuthenticatio no
 ChallengeResponseAuthentication no
@@ -127,7 +127,7 @@ sudo mkfs.ext4 -O ^has_journal -L backup-usb /dev/sdb1
 
 Now it correctly mounts to `/media/backup-usb`.
 
-```powershell
+```bash
 vmadmin@SVR-01:~$ df -h
 /dev/sdb1        62G  464M   58G   1% /media/backup-usb
 ```
@@ -140,7 +140,8 @@ Now I boot the lab background-only from PowerShell:
 
 ```powershell
 vboxmanage startvm SVR-01 --type headless
-
+#Waiting for VM "SVR-01" to power on...
+#VM "SVR-01" has been successfully started.
 ```
 
 ```
