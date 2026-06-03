@@ -1,0 +1,359 @@
+TO MOVE ON TO NEXT STEP I NEED TO DOWLOAD OFFICIAL DOCKER
+
+
+I followed the official guide on https://docs.docker.com/engine/install/ubuntu/
+
+
+# Add Docker's official GPG key:
+sudo apt update
+sudo apt install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# Add the repository to Apt sources:
+sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+Components: stable
+Architectures: $(dpkg --print-architecture)
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
+
+sudo apt update
+
+vmadmin@SVR-01:~$ sudo systemctl status docker
+● docker.service - Docker Application Container Engine
+     Loaded: loaded (/usr/lib/systemd/system/docker.service; enabled; preset: enabled)
+     Active: active (running) since Tue 2026-06-02 12:58:31 UTC; 13s ago
+ Invocation: f02c8f6a4fc440daa5f364ca33a28843
+TriggeredBy: ● docker.socket
+       Docs: https://docs.docker.com
+   Main PID: 1394 (dockerd)
+      Tasks: 12
+     Memory: 136.3M (peak: 137.2M)
+        CPU: 1.794s
+     CGroup: /system.slice/docker.service
+             └─1394 /usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
+
+Jun 02 12:58:29 SVR-01 dockerd[1394]: time="2026-06-02T12:58:29.872077410Z" level=info msg="Restoring containers: start>
+Jun 02 12:58:29 SVR-01 dockerd[1394]: time="2026-06-02T12:58:29.925387531Z" level=info msg="Deleting nftables IPv4 rule>
+Jun 02 12:58:29 SVR-01 dockerd[1394]: time="2026-06-02T12:58:29.936232407Z" level=info msg="Deleting nftables IPv6 rule>
+Jun 02 12:58:31 SVR-01 dockerd[1394]: time="2026-06-02T12:58:31.214691442Z" level=info msg="Loading containers: done."
+Jun 02 12:58:31 SVR-01 dockerd[1394]: time="2026-06-02T12:58:31.233504921Z" level=info msg="Docker daemon" commit=568f7>
+Jun 02 12:58:31 SVR-01 dockerd[1394]: time="2026-06-02T12:58:31.233909625Z" level=info msg="Initializing buildkit"
+Jun 02 12:58:31 SVR-01 dockerd[1394]: time="2026-06-02T12:58:31.250899626Z" level=info msg="Completed buildkit initiali>
+Jun 02 12:58:31 SVR-01 dockerd[1394]: time="2026-06-02T12:58:31.266065072Z" level=info msg="Daemon has completed initia>
+Jun 02 12:58:31 SVR-01 dockerd[1394]: time="2026-06-02T12:58:31.266284257Z" level=info msg="API listen on /run/docker.s>
+Jun 02 12:58:31 SVR-01 systemd[1]: Started docker.service - Docker Application Container Engine.
+
+vmadmin@SVR-01:~$ sudo systemctl start docker
+vmadmin@SVR-01:~$ sudo docker run hello-world
+Unable to find image 'hello-world:latest' locally
+latest: Pulling from library/hello-world
+4f55086f7dd0: Pull complete
+d5e71e642bf5: Download complete
+Digest: sha256:0e760fdfbc48ba8041e7c6db999bb40bfca508b4be580ac75d32c4e29d202ce1
+Status: Downloaded newer image for hello-world:latest
+
+Hello from Docker!
+This message shows that your installation appears to be working correctly.
+
+To generate this message, Docker took the following steps:
+ 1. The Docker client contacted the Docker daemon.
+ 2. The Docker daemon pulled the "hello-world" image from the Docker Hub.
+    (amd64)
+ 3. The Docker daemon created a new container from that image which runs the
+    executable that produces the output you are currently reading.
+ 4. The Docker daemon streamed that output to the Docker client, which sent it
+    to your terminal.
+
+To try something more ambitious, you can run an Ubuntu container with:
+ $ docker run -it ubuntu bash
+
+Share images, automate workflows, and more with a free Docker ID:
+ https://hub.docker.com/
+
+For more examples and ideas, visit:
+ https://docs.docker.com/get-started/
+
+done
+
+first make a daict vmadmin@SVR-01:~$ mkdir -p ~/data/nginx-proxy-manager
+
+making a nginx config with MARIADB
+
+editing the official documentation
+
+services:
+  app:
+    image: 'jc21/nginx-proxy-manager:2.15.0'
+    restart: unless-stopped
+    ports:
+      # These ports are in format <host-port>:<container-port>
+      - '80:80' # Public HTTP Port
+      - '443:443' # Public HTTPS Port
+      - '81:81' # Admin Web Port
+      # Add any other Stream port you want to expose
+      # - '21:21' # FTP
+    environment:
+      TZ: "Africa/Casablanca"
+      # Mysql/Maria connection parameters:
+      DB_MYSQL_HOST: "db"
+      DB_MYSQL_PORT: 3306
+      DB_MYSQL_USER: "npm"
+      DB_MYSQL_PASSWORD: "[REDACTED_DB_PASSWORD]"
+      DB_MYSQL_NAME: "npm"
+      # Optional SSL (see section below)
+      # DB_MYSQL_SSL: 'true'
+      # DB_MYSQL_SSL_REJECT_UNAUTHORIZED: 'true'
+      # DB_MYSQL_SSL_VERIFY_IDENTITY: 'true'
+      # Uncomment this if IPv6 is not enabled on your host
+      # DISABLE_IPV6: 'true'
+    volumes:
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt
+    depends_on:
+      - db
+
+  db:
+    image: 'linuxserver/mariadb'
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: '[REDACTED_DB_PASSWORD]'
+      MYSQL_DATABASE: 'npm'
+      MYSQL_USER: 'npm'
+      MYSQL_PASSWORD: '[REDACTED_DB_PASSWORD]'
+      TZ: "Africa/Casablanca"
+    volumes:
+      - ./mariadb:/config
+
+vmadmin@SVR-01:~/data/nginx-proxy-manager$ sudo docker compose up -d
+[sudo: authenticate] Password:
+[+] up 36/36
+ ✔ Image jc21/nginx-proxy-manager:2.15.0 Pulled                                                                   416.7s
+ ✔ Network nginx-proxy-manager_default   Created                                                                    0.1s
+ ✔ Container nginx-proxy-manager-db-1    Started                                                                    1.7s
+ ✔ Container nginx-proxy-manager-app-1   Started                                                                    1.7s
+vmadmin@SVR-01:~/data/nginx-proxy-manager$
+
+I got an API not healthy issue
+ check if container is actually rinning
+sudo docker compose ps
+
+NAME                        IMAGE                             COMMAND   SERVICE   CREATED          STATUS          PORTS
+nginx-proxy-manager-app-1   jc21/nginx-proxy-manager:2.15.0   "/init"   app       11 minutes ago   Up 11 minutes   0.0.0.0:80-81->80-81/tcp, [::]:80-81->80-81/tcp, 0.0.0.0:443->443/tcp, [::]:443->443/tcp
+nginx-proxy-manager-db-1    linuxserver/mariadb               "/init"   db        11 minutes ago   Up 11 minutes   3306/tcp
+
+lets try and restart
+
+sudo docker compose restart app
+
+still same issue
+
+vmadmin@SVR-01:~/data/nginx-proxy-manager$ sudo docker compose logs db
+db-1  | s6-rc-compile: fatal: invalid /etc/s6-overlay/s6-rc.d/init-mariadb-config/type: must be oneshot, longrun, or bundle
+
+I found solutions for get that don't serve the issue.
+I found that it's a linuxserver/MariaDB issue you got since its a community helper caused a s6-overlay issue because of a conflict between my main operating system Windows and the VM iside running Linux.
+to fix this I pivoted to the original mariadb:10.11 mariaDB on the configuration
+
+db:
+    image: 'mariadb:10.11'
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: '[REDACTED_DB_PASSWORD]'
+      MYSQL_DATABASE: 'npm'
+      MYSQL_USER: 'npm'
+      MYSQL_PASSWORD: '[REDACTED_DB_PASSWORD]'
+      TZ: "Africa/Casablanca"
+    volumes:
+      - ./mysql:/var/lib/mysql
+
+and no more issues
+
+vmadmin@SVR-01:~/data/nginx-proxy-manager$ sudo docker compose logs db
+[sudo: authenticate] Password:
+db-1  | 2026-06-02 17:26:25+01:00 [Note] [Entrypoint]: Entrypoint script for MariaDB Server 1:10.11.18+maria~ubu2204 started.
+db-1  | 2026-06-02 17:26:25+01:00 [Warn] [Entrypoint]: /sys/fs/cgroup///memory.pressure not writable, functionality unavailable to MariaDB
+db-1  | 2026-06-02 17:26:25+01:00 [Note] [Entrypoint]: Switching to dedicated user 'mysql'
+db-1  | 2026-06-02 17:26:25+01:00 [Note] [Entrypoint]: Entrypoint script for MariaDB Server 1:10.11.18+maria~ubu2204 started.
+db-1  | 2026-06-02 17:26:26+01:00 [Note] [Entrypoint]: Initializing database files
+db-1  | 2026-06-02 17:26:26 0 [Warning] mariadbd: io_uring_queue_init() failed with EPERM: sysctl kernel.io_uring_disabled has the value 2, or 1 and the user of the process is not a member of sysctl kernel.io_uring_group. (see man 2 io_uring_setup).
+db-1  | create_uring failed: falling back to libaio
+db-1  | 2026-06-02 17:26:28+01:00 [Note] [Entrypoint]: Database files initialized
+db-1  | 2026-06-02 17:26:28+01:00 [Note] [Entrypoint]: Starting temporary server
+db-1  | 2026-06-02 17:26:28+01:00 [Note] [Entrypoint]: Waiting for server startup
+db-1  | 2026-06-02 17:26:28 0 [Note] Starting MariaDB 10.11.18-MariaDB-ubu2204 source revision 197f92bee02d8e836f529f37625be69b83e7acbd server_uid 5vc+o/uYge5LL/dPC6FJCaZqL78= as process 92
+db-1  | 2026-06-02 17:26:28 0 [Note] InnoDB: Compressed tables use zlib 1.2.11
+db-1  | 2026-06-02 17:26:28 0 [Note] InnoDB: Number of transaction pools: 1
+db-1  | 2026-06-02 17:26:28 0 [Note] InnoDB: Using crc32 + pclmulqdq instructions
+db-1  | 2026-06-02 17:26:28 0 [Warning] mariadbd: io_uring_queue_init() failed with EPERM: sysctl kernel.io_uring_disabled has the value 2, or 1 and the user of the process is not a member of sysctl kernel.io_uring_group. (see man 2 io_uring_setup).
+db-1  | create_uring failed: falling back to libaio
+db-1  | 2026-06-02 17:26:28 0 [Note] InnoDB: Using Linux native AIO
+db-1  | 2026-06-02 17:26:28 0 [Note] InnoDB: innodb_buffer_pool_size_max=8388608m, innodb_buffer_pool_size=128m
+db-1  | 2026-06-02 17:26:28 0 [Note] InnoDB: Completed initialization of buffer pool
+db-1  | 2026-06-02 17:26:28 0 [Note] InnoDB: File system buffers for log disabled (block size=512 bytes)
+db-1  | 2026-06-02 17:26:28 0 [Note] InnoDB: End of log at LSN=44894
+db-1  | 2026-06-02 17:26:28 0 [Note] InnoDB: 128 rollback segments are active.
+db-1  | 2026-06-02 17:26:28 0 [Note] InnoDB: Setting file './ibtmp1' size to 12.000MiB. Physically writing the file full; Please wait ...
+db-1  | 2026-06-02 17:26:28 0 [Note] InnoDB: File './ibtmp1' size is now 12.000MiB.
+db-1  | 2026-06-02 17:26:28 0 [Note] InnoDB: log sequence number 44894; transaction id 14
+db-1  | 2026-06-02 17:26:28 0 [Note] Plugin 'FEEDBACK' is disabled.
+db-1  | 2026-06-02 17:26:28 0 [Note] mariadbd: ready for connections.
+db-1  | Version: '10.11.18-MariaDB-ubu2204'  socket: '/run/mysqld/mysqld.sock'  port: 0  mariadb.org binary distribution
+db-1  | 2026-06-02 17:26:29+01:00 [Note] [Entrypoint]: Temporary server started.
+db-1  | 2026-06-02 17:26:32+01:00 [Note] [Entrypoint]: Creating database npm
+db-1  | 2026-06-02 17:26:32+01:00 [Note] [Entrypoint]: Creating user npm
+db-1  | 2026-06-02 17:26:32+01:00 [Note] [Entrypoint]: Giving user npm access to schema npm
+db-1  | 2026-06-02 17:26:32+01:00 [Note] [Entrypoint]: Securing system users (equivalent to running mysql_secure_installation)
+db-1  |
+db-1  | 2026-06-02 17:26:32+01:00 [Note] [Entrypoint]: Stopping temporary server
+db-1  | 2026-06-02 17:26:32 0 [Note] mariadbd (initiated by: unknown): Normal shutdown
+db-1  | 2026-06-02 17:26:32 0 [Note] InnoDB: FTS optimize thread exiting.
+db-1  | 2026-06-02 17:26:32 0 [Note] InnoDB: Starting shutdown...
+db-1  | 2026-06-02 17:26:32 0 [Note] InnoDB: Dumping buffer pool(s) to /var/lib/mysql/ib_buffer_pool
+db-1  | 2026-06-02 17:26:32 0 [Note] InnoDB: Buffer pool(s) dump completed at 260602 17:26:32
+db-1  | 2026-06-02 17:26:32 0 [Note] InnoDB: Removed temporary tablespace data file: "./ibtmp1"
+db-1  | 2026-06-02 17:26:32 0 [Note] Shutdown completed; log sequence number 44894; transaction id 15
+db-1  | 2026-06-02 17:26:32 0 [Note] mariadbd: Shutdown complete
+db-1  | 2026-06-02 17:26:32+01:00 [Note] [Entrypoint]: Temporary server stopped
+db-1  |
+db-1  | 2026-06-02 17:26:32+01:00 [Note] [Entrypoint]: MariaDB init process done. Ready for start up.
+db-1  |
+db-1  | 2026-06-02 17:26:32 0 [Note] Starting MariaDB 10.11.18-MariaDB-ubu2204 source revision 197f92bee02d8e836f529f37625be69b83e7acbd server_uid 5vc+o/uYge5LL/dPC6FJCaZqL78= as process 1
+db-1  | 2026-06-02 17:26:32 0 [Note] InnoDB: Compressed tables use zlib 1.2.11
+db-1  | 2026-06-02 17:26:32 0 [Note] InnoDB: Number of transaction pools: 1
+db-1  | 2026-06-02 17:26:32 0 [Note] InnoDB: Using crc32 + pclmulqdq instructions
+db-1  | 2026-06-02 17:26:32 0 [Warning] mariadbd: io_uring_queue_init() failed with EPERM: sysctl kernel.io_uring_disabled has the value 2, or 1 and the user of the process is not a member of sysctl kernel.io_uring_group. (see man 2 io_uring_setup).
+db-1  | create_uring failed: falling back to libaio
+db-1  | 2026-06-02 17:26:32 0 [Note] InnoDB: Using Linux native AIO
+db-1  | 2026-06-02 17:26:32 0 [Note] InnoDB: innodb_buffer_pool_size_max=8388608m, innodb_buffer_pool_size=128m
+db-1  | 2026-06-02 17:26:32 0 [Note] InnoDB: Completed initialization of buffer pool
+db-1  | 2026-06-02 17:26:32 0 [Note] InnoDB: File system buffers for log disabled (block size=512 bytes)
+db-1  | 2026-06-02 17:26:32 0 [Note] InnoDB: End of log at LSN=44894
+db-1  | 2026-06-02 17:26:32 0 [Note] InnoDB: 128 rollback segments are active.
+db-1  | 2026-06-02 17:26:32 0 [Note] InnoDB: Setting file './ibtmp1' size to 12.000MiB. Physically writing the file full; Please wait ...
+db-1  | 2026-06-02 17:26:32 0 [Note] InnoDB: File './ibtmp1' size is now 12.000MiB.
+db-1  | 2026-06-02 17:26:32 0 [Note] InnoDB: log sequence number 44894; transaction id 14
+db-1  | 2026-06-02 17:26:32 0 [Note] Plugin 'FEEDBACK' is disabled.
+db-1  | 2026-06-02 17:26:32 0 [Note] InnoDB: Loading buffer pool(s) from /var/lib/mysql/ib_buffer_pool
+db-1  | 2026-06-02 17:26:32 0 [Warning] You need to use --log-bin to make --expire-logs-days or --binlog-expire-logs-seconds work.
+db-1  | 2026-06-02 17:26:32 0 [Note] InnoDB: Buffer pool(s) load completed at 260602 17:26:32
+db-1  | 2026-06-02 17:26:32 0 [Note] Server socket created on IP: '0.0.0.0', port: '3306'.
+db-1  | 2026-06-02 17:26:32 0 [Note] Server socket created on IP: '::', port: '3306'.
+db-1  | 2026-06-02 17:26:32 0 [Note] mariadbd: ready for connections.
+db-1  | Version: '10.11.18-MariaDB-ubu2204'  socket: '/run/mysqld/mysqld.sock'  port: 3306  mariadb.org binary distribution
+vmadmin@SVR-01:~/data/nginx-proxy-manager$
+
+now setting up next cloud:
+
+I'm gonna be setting it on port 8080
+ss -tulpn | grep ":8080"
+
+empty feedback meaning its available
+
+I'm creating a port-mapper.txt file to keep track on which containe have which ports
+
+vim port-mapper.text
+
+port                    container
+8080                    nextcould-container
+~
+
+Making a nexcloud separate folder
+
+vmadmin@SVR-01:~/data$ mkdir nextcould
+vmadmin@SVR-01:~/data$ ls
+nextcould  nginx-proxy-manager
+
+because I already have a yaml config in nginx folder I will be making a .env file in nextcloud folder
+
+vim .env 
+
+# NEXTCLOUD ADMIN CREDENTIALS:
+NEXTCLOUD_ADMIN_USER=admin
+NEXTCLOUD_ADMIN_PASSWORD=[REDACTED_ADMIN_PASSWORD]
+
+#UNIQUE DB SETTINGS:
+MYSQL_ROOT_PASSWORD: '[REDACTED_ROOT_PASSWORD]'
+MYSQL_PASSWORD: '[REDACTED_ROOT_PASSWORD]'
+MYSQL_DATABASE=nextcloud
+MYSQL_USER=nextcloud
+
+# Database Connection
+MYSQL_HOST=db
+
+going back to modify 
+
+nextcloud:
+    image: nextcloud:latest
+    restart: unless-stopped
+    ports:
+      - '8080:80'
+    env_file:
+      - ../nextcloud/.env # reads .env file inside nextcloud folder
+    environment:
+      - NEXTCLOUD_TRUSTED_DOMAINS=localhost 192.168.56.5 #allow VM ip address acesss
+      - PHP_MEMORY_LIMIT=512M # better performance
+      - PHP_UPLOAD_LIMIT=10G  # upload big files
+    volumes:
+      - ../nextcloud/nextcloud_data:/var/www/html # Stores cloud data inside nextcloud folder
+    depends_on:
+      - db
+
+tired to fire up nextcloud
+Error while trying to create admin account: An exception occurred in the driver: SQLSTATE[HY000] [1045] Access denied for user 'nextcloud'@'172.18.0.4' (using password: YES)
+
+the problem is because I made MariaDB before nextcloude now its failing to create a new dataase
+the fix is to change login to root
+
+# NEXTCLOUD ADMIN CREDENTIALS
+
+NEXTCLOUD_ADMIN_USER=admin
+NEXTCLOUD_ADMIN_PASSWORD=[REDACTED_ADMIN_PASSWORD]
+
+# UNIQUE DB SETTINGS
+
+MYSQL_PASSWORD=[REDACTED_DB_PASSWORD]
+MYSQL_DATABASE=nextcloud
+MYSQL_USER=root
+
+# Database Connection
+MYSQL_HOST=db
+~
+
+I got hit with another error 
+Error
+
+It looks like you are trying to reinstall your Nextcloud. However the file CAN_INSTALL is missing from your config directory. Please create the file CAN_INSTALL in your config folder to continue. 
+
+this one is simple I just create CAN_INSTALL thats causing issues
+
+touch ../nextcloud/config/CAN_INSTALL
+
+finally ive been able to log in properly
+
+Good afternoon
+Meeting agenda.whiteboard
+Last updated 18 minutes ago
+Path name /Templates/Meeting agenda.whiteboard
+Reasons to use Nextcloud.pdf
+Last updated 18 minutes ago
+Path name /Reasons to use Nextcloud.pdf
+Templates credits.md
+Last updated 18 minutes ago
+Path name /Templates credits.md
+Nextcloud intro.mp4
+Last updated 18 minutes ago
+Path name /Nextcloud intro.mp4
+Nextcloud Manual.pdf
+Last updated 18 minutes ago
+Path name /Nextcloud Manual.pdf
+Readme.md
+Last updated 18 minutes ago
+Path name /Readme.md
+Nextcloud.png
+Last updated 18 minutes ago
+

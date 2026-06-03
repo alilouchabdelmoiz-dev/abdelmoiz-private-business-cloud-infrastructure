@@ -1,0 +1,63 @@
+services:
+  app:
+    image: 'jc21/nginx-proxy-manager:2.15.0'
+    restart: unless-stopped
+    ports:
+      # These ports are in format <host-port>:<container-port>
+      - '80:80' # Public HTTP Port
+      - '443:443' # Public HTTPS Port
+      - '81:81' # Admin Web Port
+      # Add any other Stream port you want to expose
+      # - '21:21' # FTP
+    environment:
+      TZ: "Africa/Casablanca"
+      # Mysql/Maria connection parameters:
+      DB_MYSQL_HOST: "db"
+      DB_MYSQL_PORT: 3306
+      DB_MYSQL_USER: "npm"
+      DB_MYSQL_PASSWORD: "your_secure_password_here"
+      DB_MYSQL_NAME: "npm"
+      # Optional SSL (see section below)
+      # DB_MYSQL_SSL: 'true'
+      # DB_MYSQL_SSL_REJECT_UNAUTHORIZED: 'true'
+      # DB_MYSQL_SSL_VERIFY_IDENTITY: 'true'
+      # Uncomment this if IPv6 is not enabled on your host
+      # DISABLE_IPV6: 'true'
+    volumes:
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt
+    depends_on:
+      - db
+
+  db:
+    image: 'mariadb:10.11'
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: 'your_secure_password_here'
+      MYSQL_DATABASE: 'npm'
+      MYSQL_USER: 'npm'
+      MYSQL_PASSWORD: 'your_secure_password_here'
+      TZ: "Africa/Casablanca"
+    volumes:
+      - ./mysql:/var/lib/mysql
+
+  nextcloud:
+    image: nextcloud:latest
+    restart: unless-stopped
+    ports:
+      - '8080:80'
+    env_file:
+      - ../nextcloud/.env # reads .env file inside nextcloud folder
+    environment:
+      - NEXTCLOUD_TRUSTED_DOMAINS_0=localhost
+      - NEXTCLOUD_TRUSTED_DOMAINS_1=192.168.56.5
+      - PHP_MEMORY_LIMIT=512M
+      - PHP_UPLOAD_LIMIT=10G
+    volumes:
+      - ../nextcloud/data:/var/www/html/data           # Personal cloud files
+      - ../nextcloud/config:/var/www/html/config       # Nextcloud system configurations
+      - ../nextcloud/apps:/var/www/html/custom_apps    # Third-party plugins and themes
+    depends_on:
+      - db
+
+

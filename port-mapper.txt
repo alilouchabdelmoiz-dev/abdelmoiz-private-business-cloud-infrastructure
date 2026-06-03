@@ -1,0 +1,6 @@
+PORT                CONTAINER / SERVICE
+80                  nginx-proxy-manager (HTTP Edge)
+443                 nginx-proxy-manager (HTTPS Edge)
+81                  nginx-proxy-manager (Admin UI Web panel)
+8080                nextcloud-container (Application Backend)
+3306                mariadb-container   (Isolated Database Layer)
