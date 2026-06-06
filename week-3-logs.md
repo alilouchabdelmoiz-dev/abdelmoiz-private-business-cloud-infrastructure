@@ -1,4 +1,3 @@
-```markdown
 # Week 3 Infrastructure Log: Centralized Monitoring, Metrics Collection & Alerting
 
 ## Overview
@@ -247,6 +246,3 @@ predict_linear(node_filesystem_free_bytes{instance="192.168.x.x:9100", mountpoin
 * **Severity:** Warning
 * **Incident Summary:** Alerts engineering when available host memory dips below 10%. This intercept step triggers early remediation before the Linux Out-Of-Memory (OOM) Killer aggressively terminates running containers (such as the backend MariaDB database instances).
 
-```
-
-```
