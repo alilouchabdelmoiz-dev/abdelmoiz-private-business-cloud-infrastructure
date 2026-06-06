@@ -97,10 +97,11 @@ The stack initialization command executed cleanly:
 ```bash
 sudo docker compose up -d
 
-
 ```
 
 *Output verification: Container prometheus Running (0.0s), Container grafana Running (0.0s).*
+
+![Docker Compose Up](images/001-docker-compose-up.png)
 
 ---
 
@@ -163,8 +164,9 @@ Local polling confirmed metric distribution exposure on standard port `9100`:
 ```bash
 curl http://localhost:9100/metrics
 
-
 ```
+
+![Node Exporter Metrics](images/002-node-exporter-metrics.png)
 
 ---
 
@@ -197,8 +199,11 @@ scrape_configs:
 
 * **SVR-01 Engine Health Status:**
 
+![SVR-01 Node Metrics](images/003-svr01-node-metrics.png)
+
 * **SVR-03 Engine Health Status:**
 
+![SVR-03 Node Metrics](images/004-svr03-node-metrics.png)
 
 ---
 
@@ -221,6 +226,8 @@ up{job=~"SVR.*|watchtower"}
 * **Severity:** Critical
 * **Incident Summary:** Triggered when any infrastructure node falls offline or stops responding to data collection queries.
 
+![Alert Instance Down](images/005-alert-instance-down.png)
+
 ### Alert 2: Storage Hardware Detachment (USB Offline)
 
 * **Target Scope:** Dedicated backup mount points.
@@ -236,6 +243,8 @@ absent(node_filesystem_size_bytes{instance="192.168.x.x:9100", mountpoint="/medi
 * **Severity:** Critical
 * **Incident Summary:** Immediate warning triggered if the backup storage array becomes unmounted or unreadable on the node.
 
+![Alert USB Offline](images/008-alert-usb-offline.png)
+
 ### Alert 3: Proactive Disk Exhaustion Modeling (Predictive Analysis)
 
 * **Target Scope:** Root System Drive (`/`)
@@ -250,6 +259,8 @@ predict_linear(node_filesystem_free_bytes{instance="192.168.x.x:9100", mountpoin
 
 * **Severity:** Warning
 * **Incident Summary:** Proactively alerts operations before physical runtime space runs out, completely eliminating risk patterns associated with unexpected MariaDB database corruption due to disk fill starvation.
+
+![Alert Disk Predictive](images/007-alert-disk-predictive.png)
 
 ### Alert 4: Memory Starvation Defense (OOM Killer Mitigation)
 
@@ -267,4 +278,4 @@ predict_linear(node_filesystem_free_bytes{instance="192.168.x.x:9100", mountpoin
 * **Severity:** Warning
 * **Incident Summary:** Alerts engineering when available host memory dips below 10%. This intercept step triggers early remediation before the Linux Out-Of-Memory (OOM) Killer aggressively terminates running containers (such as the backend MariaDB database instances).
 
-
+![Alert Memory Exhaustion](images/006-alert-memory-exhaustion.png)
