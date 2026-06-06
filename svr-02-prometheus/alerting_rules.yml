@@ -1,0 +1,233 @@
+apiVersion: 1
+groups:
+    - orgId: 1
+      name: infra-alive
+      folder: Infrastructure
+      interval: 1m
+      rules:
+        - uid: ffobqyvlmddkwc
+          title: Instance Down
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 120
+                to: 0
+              datasourceUid: ffo4neevkhds0b
+              model:
+                editorMode: code
+                expr: up{job=~"SVR.*|watchtower"}
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              queryType: expression
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 0
+                        type: eq
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          dashboardUid: rYdddlPWk
+          panelId: 77
+          noDataState: KeepLast
+          execErrState: Error
+          for: 2m
+          annotations:
+            __dashboardUid__: rYdddlPWk
+            __panelId__: "77"
+            summary: Prometheus is offline
+          labels:
+            App: infrastructure project
+            Severity: critical
+          isPaused: false
+          notification_settings:
+            receiver: Sysadmin-Telegram
+        - uid: bfobssncigkxsb
+          title: USB offline
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 120
+                to: 0
+              datasourceUid: ffo4neevkhds0b
+              model:
+                editorMode: code
+                expr: absent(node_filesystem_size_bytes{instance="[SVR01_IP]:9100", mountpoint="/media/backup-usb"})
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              queryType: expression
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 1
+                        type: eq
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: KeepLast
+          execErrState: Error
+          for: 2m
+          annotations:
+            summary: USB not mounted
+          labels:
+            App: infrastructure project
+            Severity: critical
+          isPaused: false
+          notification_settings:
+            receiver: Sysadmin-Telegram
+        - uid: bfobuznpbl91cb
+          title: Disk Exhaustion predictive
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 3600
+                to: 0
+              datasourceUid: ffo4neevkhds0b
+              model:
+                editorMode: code
+                expr: predict_linear(node_filesystem_free_bytes{instance="[SVR01_IP]:9100", mountpoint="/"}[1h], 86400)
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              queryType: expression
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 0
+                        type: lt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: KeepLast
+          execErrState: Error
+          for: 5m
+          annotations:
+            description: Based on growth over last hour, disk is likely to hit 100% during 24 hours. MariaDB corruption is inevitable if not addressed
+            summary: disk is likely to be 100% full
+          labels:
+            App: infrastructure project
+            Severity: warning
+          isPaused: false
+          notification_settings:
+            receiver: Sysadmin-Telegram
+        - uid: cfobxnywb9rswd
+          title: High Memory Exhaustion
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 120
+                to: 0
+              datasourceUid: ffo4neevkhds0b
+              model:
+                editorMode: code
+                expr: (node_memory_MemAvailable_bytes{instance="[SVR01_IP]:9100"} / node_memory_MemTotal_bytes{instance="[SVR01_IP]:9100"}) * 100
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              queryType: expression
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 10
+                        type: lt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: KeepLast
+          execErrState: Error
+          for: 2m
+          annotations:
+            description: Available memory has dropped below 10% on SVR-01. Action needed before the Linux OOM Killer aggressively terminates the MariaDB container.
+            summary: Host memory critically low on SVR-01
+          labels:
+            App: infrastructure project
+            Severity: warning
+          isPaused: false
+          notification_settings:
+            receiver: Sysadmin-Telegram

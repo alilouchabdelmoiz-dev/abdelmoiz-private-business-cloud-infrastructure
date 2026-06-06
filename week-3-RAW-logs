@@ -1,0 +1,852 @@
+setting up Prometheus and gravana
+
+Im going to be setting the up on docker in SVR-02
+
+to save on time and for ease of cominucation between the two
+
+after setting up docker on SVR-02
+vmadmin@SVR-02:~$ sudo docker run hello-world
+Unable to find image 'hello-world:latest' locally
+latest: Pulling from library/hello-world
+4f55086f7dd0: Pull complete
+d5e71e642bf5: Download complete
+Digest: sha256:0e760fdfbc48ba8041e7c6db999bb40bfca508b4be580ac75d32c4e29d202ce1
+Status: Downloaded newer image for hello-world:latest
+
+Hello from Docker!
+This message shows that your installation appears to be working correctly.
+
+To generate this message, Docker took the following steps:
+ 1. The Docker client contacted the Docker daemon.
+ 2. The Docker daemon pulled the "hello-world" image from the Docker Hub.
+    (amd64)
+ 3. The Docker daemon created a new container from that image which runs the
+    executable that produces the output you are currently reading.
+ 4. The Docker daemon streamed that output to the Docker client, which sent it
+    to your terminal.
+
+To try something more ambitious, you can run an Ubuntu container with:
+ $ docker run -it ubuntu bash
+
+Share images, automate workflows, and more with a free Docker ID:
+ https://hub.docker.com/
+
+For more examples and ideas, visit:
+ https://docs.docker.com/get-started/
+
+ mkdir prometheus-grafana-docker
+ I also made a shortcut fo easier acess
+ vim ~/.bashrc
+
+# shortcuts
+alias cdpg='cd ~/prometheus-grafana-docker'
+
+vmadmin@SVR-02:~/prometheus-grafana-docker$ source ~/.bashrc
+vmadmin@SVR-02:~/prometheus-grafana-docker$ cdpg
+
+
+ vim docker-compose.yml
+
+
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - '9090:9090'
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+
+  grafana:
+    image: grafana/grafana-oss:latest
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    volumes:
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+volumes:
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+
+
+lets give it something to monitore
+nano /home/vmadmin/prometheus-grafana-docker/prometheus.yml
+
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'watchtower'
+    static_configs:
+      - targets: ['localhost:9090']
+
+vmadmin@SVR-02:~/prometheus-grafana-docker$ sudo docker compose up -d
+[sudo: authenticate] Password:
+[+] up 2/2
+ ✔ Container prometheus Running                                                                                     0.0s
+ ✔ Container grafana    Running                                                                                     0.0s
+vmadmin@SVR-02:~/prometheus-grafana-docker$
+
+
+now into downloading SVR-01 im going to downloadnode_exporter
+
+
+Last login: Wed Jun  3 15:05:06 2026 from 192.168.56.1
+vmadmin@SVR-01:~$ uname -m
+x86_64
+vmadmin@SVR-01:~$ mkdir -p ~/downloads && cd ~/downloads
+wget https://github.com/prometheus/node_exporter/releases/download/v1.11.1/node_exporter-1.11.1.linux-amd64.tar.gz
+--2026-06-04 15:07:29--  https://github.com/prometheus/node_exporter/releases/download/v1.11.1/node_exporter-1.11.1.linux-amd64.tar.gz
+Resolving github.com (github.com)... 140.82.121.4
+Connecting to github.com (github.com)|140.82.121.4|:443... connected.
+HTTP request sent, awaiting response... 302 Found
+Location: https://release-assets.githubusercontent.com/github
+...
+HTTP request sent, awaiting response... 200 OK
+Length: 12084398 (12M) [application/octet-stream]
+Saving to: ‘node_exporter-1.11.1.linux-amd64.tar.gz’
+
+node_exporter-1.11.1.linux-am 100%[=================================================>]  11.52M  3.30MB/s    in 3.6s
+
+2026-06-04 15:07:33 (3.17 MB/s) - ‘node_exporter-1.11.1.linux-amd64.tar.gz’ saved [12084398/12084398]
+
+vmadmin@SVR-01:~/downloads$ ls
+node_exporter-1.11.1.linux-amd64.tar.gz
+vmadmin@SVR-01:~/downloads$ tar -xvf node_exporter-1.11.1.linux-amd64.tar.gz
+node_exporter-1.11.1.linux-amd64/
+node_exporter-1.11.1.linux-amd64/LICENSE
+node_exporter-1.11.1.linux-amd64/node_exporter
+node_exporter-1.11.1.linux-amd64/NOTICE
+vmadmin@SVR-01:~/downloads$ ls
+node_exporter-1.11.1.linux-amd64  node_exporter-1.11.1.linux-amd64.tar.gz
+vmadmin@SVR-01:~/downloads$ sudo mv node_exporter-1.11.1.linux-amd64/node_exporter /usr/local/bin/
+[sudo: authenticate] Password:
+vmadmin@SVR-01:~/downloads$ ls
+node_exporter-1.11.1.linux-amd64  node_exporter-1.11.1.linux-amd64.tar.gz
+vmadmin@SVR-01:~/downloads$ cd node_exporter-1.11.1.linux-amd64
+vmadmin@SVR-01:~/downloads/node_exporter-1.11.1.linux-amd64$ ls
+LICENSE  NOTICE
+vmadmin@SVR-01:~/downloads/node_exporter-1.11.1.linux-amd64$ ls -a
+.  ..  LICENSE  NOTICE
+vmadmin@SVR-01:~/downloads/node_exporter-1.11.1.linux-amd64$ sudo useradd -rs /bin/false node_exporter
+vmadmin@SVR-01:~/downloads/node_exporter-1.11.1.linux-amd64$ sudo nano /etc/systemd/system/node_exporter.service
+vmadmin@SVR-01:~/downloads/node_exporter-1.11.1.linux-amd64$ sudo nano /etc/systemd/system/node_exporter.service
+vmadmin@SVR-01:~/downloads/node_exporter-1.11.1.linux-amd64$ sudo systemctl daemon-reload
+sudo systemctl start node_exporter
+sudo systemctl enable node_exporter
+Created symlink '/etc/systemd/system/multi-user.target.wants/node_exporter.service' → '/etc/systemd/system/node_exporter.service'.
+vmadmin@SVR-01:~/downloads/node_exporter-1.11.1.linux-amd64$ curl http://localhost:9100/metrics
+# HELP go_gc_duration_seconds A summary of the wall-time pause (stop-the-world) duration in garbage collection cycles.
+# TYPE go_gc_duration_seconds summary
+go_gc_duration_seconds{quantile="0"} 0
+go_gc_duration_seconds{quantile="0.25"} 0
+go_gc_duration_seconds{quantile="0.5"} 0
+go_gc_duration_seconds{quantile="0.75"} 0
+go_gc_duration_seconds{quantile="1"} 0
+go_gc_duration_seconds_sum 0
+go_gc_duration_seconds_count 0
+
+
+now ill add anew job in prometheus.yml to listen for the new node_exporter I made on SVR-01
+
+  GNU nano 8.7.1                    /home/vmadmin/prometheus-grafana-docker/prometheus.yml
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'watchtower'
+    static_configs:
+      - targets: ['localhost:9090']
+
+
+  - job_name: 'SVR-01-Core'
+    static_configs:
+      - targets: ['192.168.x.x:9100']
+
+I went through the same process for SVR-03
+
+
+after I set up gravana for both SVR-01 and SVR-02
+
+I went to making alerts
+
+I made one if promotheus is down
+
+apiVersion: 1
+groups:
+    - orgId: 1
+      name: infra-alive
+      folder: Infrastructure
+      interval: 1m
+      rules:
+        - uid: [UID]
+          title: Instance Down
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 120
+                to: 0
+              datasourceUid: [datasourceUid]
+              model:
+                editorMode: code
+                expr: up{job=~"SVR.*|watchtower"}
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              queryType: expression
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 0
+                        type: eq
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          dashboardUid: rYdddlPWk
+          panelId: 77
+          noDataState: KeepLast
+          execErrState: Error
+          for: 2m
+          annotations:
+            __dashboardUid__: rYdddlPWk
+            __panelId__: "77"
+            summary: Prometheus is offline
+          labels:
+            App: infrastracture project
+            Severity: critical
+          isPaused: false
+          notification_settings:
+            receiver: Sysadmin-Telegram
+        - uid: bfobssncigkxsb
+          title: USB offline
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 120
+                to: 0
+              datasourceUid: [datasourceUid]
+              model:
+                editorMode: code
+                expr: absent(node_filesystem_size_bytes{instance="192.168.x.x:9100", mountpoint="/media/backup-usb"})
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              queryType: expression
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 1
+                        type: eq
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: KeepLast
+          execErrState: Error
+          for: 2m
+          annotations:
+            summary: USB not mounted
+          labels:
+            App: infrastracture project
+            Severity: critical
+          isPaused: false
+          notification_settings:
+            receiver: Sysadmin-Telegram
+
+I'v made an alert if usb is unmounted
+
+apiVersion: 1
+groups:
+    - orgId: 1
+      name: infra-alive
+      folder: Infrastructure
+      interval: 1m
+      rules:
+        - uid: [UID]
+          title: Instance Down
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 120
+                to: 0
+              datasourceUid: [datasourceUid]
+              model:
+                editorMode: code
+                expr: up{job=~"SVR.*|watchtower"}
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              queryType: expression
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 0
+                        type: eq
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          dashboardUid: rYdddlPWk
+          panelId: 77
+          noDataState: KeepLast
+          execErrState: Error
+          for: 2m
+          annotations:
+            __dashboardUid__: rYdddlPWk
+            __panelId__: "77"
+            summary: Prometheus is offline
+          labels:
+            App: infrastracture project
+            Severity: critical
+          isPaused: false
+          notification_settings:
+            receiver: Sysadmin-Telegram
+        - uid: bfobssncigkxsb
+          title: USB offline
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 120
+                to: 0
+              datasourceUid: [datasourceUid]
+              model:
+                editorMode: code
+                expr: absent(node_filesystem_size_bytes{instance="192.168.x.x:9100", mountpoint="/media/backup-usb"})
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              queryType: expression
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 1
+                        type: eq
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: KeepLast
+          execErrState: Error
+          for: 2m
+          annotations:
+            summary: USB not mounted
+          labels:
+            App: infrastracture project
+            Severity: critical
+          isPaused: false
+          notification_settings:
+            receiver: Sysadmin-Telegram
+
+
+I made another one for desk exaution prediction based on growth for the last hour
+
+apiVersion: 1
+groups:
+    - orgId: 1
+      name: infra-alive
+      folder: Infrastructure
+      interval: 1m
+      rules:
+        - uid: [UID]
+          title: Instance Down
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 120
+                to: 0
+              datasourceUid: [datasourceUid]
+              model:
+                editorMode: code
+                expr: up{job=~"SVR.*|watchtower"}
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              queryType: expression
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 0
+                        type: eq
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          dashboardUid: rYdddlPWk
+          panelId: 77
+          noDataState: KeepLast
+          execErrState: Error
+          for: 2m
+          annotations:
+            __dashboardUid__: rYdddlPWk
+            __panelId__: "77"
+            summary: Prometheus is offline
+          labels:
+            App: infrastracture project
+            Severity: critical
+          isPaused: false
+          notification_settings:
+            receiver: Sysadmin-Telegram
+        - uid: bfobssncigkxsb
+          title: USB offline
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 120
+                to: 0
+              datasourceUid: [datasourceUid]
+              model:
+                editorMode: code
+                expr: absent(node_filesystem_size_bytes{instance="192.168.x.x:9100", mountpoint="/media/backup-usb"})
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              queryType: expression
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 1
+                        type: eq
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: KeepLast
+          execErrState: Error
+          for: 2m
+          annotations:
+            summary: USB not mounted
+          labels:
+            App: infrastracture project
+            Severity: critical
+          isPaused: false
+          notification_settings:
+            receiver: Sysadmin-Telegram
+        - uid: bfobuznpbl91cb
+          title: Disk Exhaustion predictive
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 3600
+                to: 0
+              datasourceUid: [datasourceUid]
+              model:
+                editorMode: code
+                expr: predict_linear(node_filesystem_free_bytes{instance="192.168.x.x:9100", mountpoint="/"}[1h], 86400)
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              queryType: expression
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 0
+                        type: lt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: KeepLast
+          execErrState: Error
+          for: 5m
+          annotations:
+            description: Based on growth over last hour, disk is likely to hit 100% during 24 hours. MariaDB corruption is inevitable if not addressed
+            summary: disk is likely to be 100% full
+          labels:
+            App: infrastracture project
+            Severity: warning
+          isPaused: false
+          notification_settings:
+            receiver: Sysadmin-Telegram
+
+
+third alert to avoid killing MariaDB when Linux low on ram
+
+
+apiVersion: 1
+groups:
+    - orgId: 1
+      name: infra-alive
+      folder: Infrastructure
+      interval: 1m
+      rules:
+        - uid: [UID]
+          title: Instance Down
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 120
+                to: 0
+              datasourceUid: [datasourceUid]
+              model:
+                editorMode: code
+                expr: up{job=~"SVR.*|watchtower"}
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              queryType: expression
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 0
+                        type: eq
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          dashboardUid: rYdddlPWk
+          panelId: 77
+          noDataState: KeepLast
+          execErrState: Error
+          for: 2m
+          annotations:
+            __dashboardUid__: rYdddlPWk
+            __panelId__: "77"
+            summary: Prometheus is offline
+          labels:
+            App: infrastracture project
+            Severity: critical
+          isPaused: false
+          notification_settings:
+            receiver: Sysadmin-Telegram
+        - uid: bfobssncigkxsb
+          title: USB offline
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 120
+                to: 0
+              datasourceUid: [datasourceUid]
+              model:
+                editorMode: code
+                expr: absent(node_filesystem_size_bytes{instance="192.168.x.x:9100", mountpoint="/media/backup-usb"})
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              queryType: expression
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 1
+                        type: eq
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: KeepLast
+          execErrState: Error
+          for: 2m
+          annotations:
+            summary: USB not mounted
+          labels:
+            App: infrastracture project
+            Severity: critical
+          isPaused: false
+          notification_settings:
+            receiver: Sysadmin-Telegram
+        - uid: bfobuznpbl91cb
+          title: Disk Exhaustion predictive
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 3600
+                to: 0
+              datasourceUid: [datasourceUid]
+              model:
+                editorMode: code
+                expr: predict_linear(node_filesystem_free_bytes{instance="192.168.x.x:9100", mountpoint="/"}[1h], 86400)
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              queryType: expression
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 0
+                        type: lt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: KeepLast
+          execErrState: Error
+          for: 5m
+          annotations:
+            description: Based on growth over last hour, disk is likely to hit 100% during 24 hours. MariaDB corruption is inevitable if not addressed
+            summary: disk is likely to be 100% full
+          labels:
+            App: infrastracture project
+            Severity: warning
+          isPaused: false
+          notification_settings:
+            receiver: Sysadmin-Telegram
+        - uid: cfobxnywb9rswd
+          title: High Memory Exhaustion
+          condition: C
+          data:
+            - refId: A
+              relativeTimeRange:
+                from: 120
+                to: 0
+              datasourceUid: [datasourceUid]
+              model:
+                editorMode: code
+                expr: (node_memory_MemAvailable_bytes{instance="192.168.x.x:9100"} / node_memory_MemTotal_bytes{instance="192.168.x.x:9100"}) * 100
+                instant: true
+                intervalMs: 1000
+                legendFormat: __auto
+                maxDataPoints: 43200
+                range: false
+                refId: A
+            - refId: C
+              queryType: expression
+              datasourceUid: __expr__
+              model:
+                conditions:
+                    - evaluator:
+                        params:
+                            - 10
+                        type: lt
+                      operator:
+                        type: and
+                      query:
+                        params:
+                            - C
+                      reducer:
+                        params: []
+                        type: last
+                      type: query
+                datasource:
+                    type: __expr__
+                    uid: __expr__
+                expression: A
+                intervalMs: 1000
+                maxDataPoints: 43200
+                refId: C
+                type: threshold
+          noDataState: KeepLast
+          execErrState: Error
+          for: 2m
+          annotations:
+            description: Available memory has dropped below 10% on the Apps node. Action needed before the Linux OOM Killer aggressively terminates the MariaDB container.
+            summary: Host memory critically low on SVR-01
+          labels:
+            App: infrastracture project
+            Severity: warning
+          isPaused: false
+          notification_settings:
+            receiver: Sysadmin-Telegram
+
+
+
