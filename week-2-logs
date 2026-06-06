@@ -1,0 +1,55 @@
+======================================================================
+PHASE 2 LOG: DOCKER CONTAINERIZATION & REVERSE PROXY LAYER
+======================================================================
+
+[STEP 1: INSTALLING OFFICIAL DOCKER ENGINE FROM SOURCE]
+Followed upstream documentation to provision official runtime repositories:
+$ sudo apt update
+$ sudo apt install ca-certificates curl
+$ sudo install -m 0755 -d /etc/apt/keyrings
+$ sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+$ sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+$ sudo tee /etc/apt/sources.list.d/docker.sources <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}")
+Components: stable
+Architectures: $(dpkg --print-architecture)
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
+
+$ sudo apt update
+$ sudo systemctl status docker (Verified Daemon: active running)
+$ sudo docker run hello-world (Verified architecture execution payload)
+
+[STEP 2: PROVISIONING EDGE ROUTER - NGINX PROXY MANAGER]
+$ mkdir -p ~/data/nginx-proxy-manager
+$ cd ~/data/nginx-proxy-manager
+
+Initial implementation utilized 'linuxserver/mariadb'. 
+Result: API Unhealthy Exception. 
+Debugging stack trace (`docker compose logs db`):
+"s6-rc-compile: fatal: invalid /etc/s6-overlay/s6-rc.d/init-mariadb-config/type: must be oneshot, longrun, or bundle"
+
+Root Cause Analysis: Known s6-overlay layer compilation conflict surfacing from specific filesystem mapping interactions across VirtualBox translation layers.
+Resolution: Refactored database service stanza to utilize the official upstream optimized 'mariadb:10.11' image. State mounted cleanly to local './mysql'.
+
+[STEP 3: NETWORKING & MULTI-TENANT CLOUD DEPLOYMENT]
+Verified port 8080 availability: $ ss -tulpn | grep ":8080"
+Mapped internal socket records to `port-mapper.txt`.
+$ mkdir -p ~/data/nextcloud
+$ nano ~/data/nextcloud/.env
+
+Database environment parameters injected securely via external file mapping.
+Initial initialization failed with authentication exception: 
+"Error while trying to create admin account: An exception occurred in the driver: SQLSTATE[HY000] [1045] Access denied for user 'nextcloud'..."
+
+Root Cause Analysis: Nextcloud runtime attempting to register a net-new schema state on a pre-existing active database instance before privileges were fully synchronized.
+Resolution: Realigned operational authentication directives within `.env` parameters to force root database engine mapping flags for initial workspace population.
+
+Encountered installation security block:
+"It looks like you are trying to reinstall your Nextcloud. However the file CAN_INSTALL is missing..."
+Resolution: Explicitly touched security token file: $ touch ../nextcloud/config/CAN_INSTALL
+
+RESULT: Stack operational. Nextcloud filesystem initialized cleanly. Complete access to storage abstraction layers validated successfully.

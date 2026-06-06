@@ -13,6 +13,7 @@ After provisioning Docker on the host, the engine status was verified using the 
 ```bash
 sudo docker run hello-world
 
+
 ```
 
 *Result: Clean execution return from daemon, confirming functional container architecture.*
@@ -30,6 +31,7 @@ vim ~/.bashrc
 alias cdpg='cd ~/prometheus-grafana-docker'
 
 source ~/.bashrc
+
 
 ```
 
@@ -70,6 +72,7 @@ volumes:
   grafana-data:
     driver: local
 
+
 ```
 
 ### Baseline Prometheus Configuration
@@ -86,12 +89,14 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
+
 ```
 
 The stack initialization command executed cleanly:
 
 ```bash
 sudo docker compose up -d
+
 
 ```
 
@@ -119,6 +124,7 @@ sudo mv node_exporter-1.11.1.linux-amd64/node_exporter /usr/local/bin/
 # Provision isolated system user for daemon privilege restriction
 sudo useradd -rs /bin/false node_exporter
 
+
 ```
 
 ### Systemd Daemon Standardization
@@ -140,6 +146,7 @@ ExecStart=/usr/local/bin/node_exporter
 [Install]
 WantedBy=multi-user.target
 
+
 ```
 
 ```bash
@@ -148,12 +155,14 @@ sudo systemctl daemon-reload
 sudo systemctl start node_exporter
 sudo systemctl enable node_exporter
 
+
 ```
 
 Local polling confirmed metric distribution exposure on standard port `9100`:
 
 ```bash
 curl http://localhost:9100/metrics
+
 
 ```
 
@@ -181,7 +190,15 @@ scrape_configs:
     static_configs:
       - targets: ['192.168.x.y:9100']
 
+
 ```
+
+### Grafana Visualization Verification
+
+* **SVR-01 Engine Health Status:**
+
+* **SVR-03 Engine Health Status:**
+
 
 ---
 
@@ -194,11 +211,12 @@ Alerting criteria were engineered in Grafana to map real-world infrastructure fa
 * **Target Scope:** `SVR-01`, `SVR-03`, and core containers.
 * **Condition Rules:** Evaluates metrics connection status over a 2-minute duration threshold.
 * **Expression (PromQL):**
+
 ```promql
 up{job=~"SVR.*|watchtower"}
 
-```
 
+```
 
 * **Severity:** Critical
 * **Incident Summary:** Triggered when any infrastructure node falls offline or stops responding to data collection queries.
@@ -208,11 +226,12 @@ up{job=~"SVR.*|watchtower"}
 * **Target Scope:** Dedicated backup mount points.
 * **Condition Rules:** Monitors device structural absence across logical volumes.
 * **Expression (PromQL):**
+
 ```promql
 absent(node_filesystem_size_bytes{instance="192.168.x.x:9100", mountpoint="/media/backup-usb"})
 
-```
 
+```
 
 * **Severity:** Critical
 * **Incident Summary:** Immediate warning triggered if the backup storage array becomes unmounted or unreadable on the node.
@@ -222,11 +241,12 @@ absent(node_filesystem_size_bytes{instance="192.168.x.x:9100", mountpoint="/medi
 * **Target Scope:** Root System Drive (`/`)
 * **Condition Rules:** Samples data consumption rate variations over a moving 1-hour window to project storage bounds over a 24-hour future timeline.
 * **Expression (PromQL):**
+
 ```promql
 predict_linear(node_filesystem_free_bytes{instance="192.168.x.x:9100", mountpoint="/"}[1h], 86400) < 0
 
-```
 
+```
 
 * **Severity:** Warning
 * **Incident Summary:** Proactively alerts operations before physical runtime space runs out, completely eliminating risk patterns associated with unexpected MariaDB database corruption due to disk fill starvation.
@@ -236,13 +256,15 @@ predict_linear(node_filesystem_free_bytes{instance="192.168.x.x:9100", mountpoin
 * **Target Scope:** `SVR-01` Core RAM Allocation
 * **Condition Rules:** Tracks percentage boundaries of dynamically available host memory against system pools over a 2-minute window.
 * **Expression (PromQL):**
+
 ```promql
 (node_memory_MemAvailable_bytes{instance="192.168.x.x:9100"} / node_memory_MemTotal_bytes{instance="192.168.x.x:9100"}) * 100
 
-```
 
+```
 
 * **Threshold:** `< 10`
 * **Severity:** Warning
 * **Incident Summary:** Alerts engineering when available host memory dips below 10%. This intercept step triggers early remediation before the Linux Out-Of-Memory (OOM) Killer aggressively terminates running containers (such as the backend MariaDB database instances).
+
 
