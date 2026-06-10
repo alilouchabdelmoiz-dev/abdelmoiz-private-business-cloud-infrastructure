@@ -1,0 +1,16 @@
+[DEFAULT]
+# Whitelist localhost and specific Windows Host IPs
+ignoreip = 127.0.0.1/8 ::1 [my tailscale windows ip adress] [my windows ip adress]
+
+# Global ban parameters
+bantime  = 1h
+findtime = 10m
+maxretry = 3
+
+# using UFW to  to drop malicious traffic
+banaction = ufw
+banaction_allports = ufw
+
+[sshd]
+enabled = true
+port    = ssh

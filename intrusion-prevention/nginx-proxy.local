@@ -1,0 +1,10 @@
+[nginx-http-auth]
+enabled  = true
+filter   = nginx-http-auth
+
+logpath  = /home/vmadmin/data/nginx-proxy-manager/data/logs/*_access.log
+           /home/vmadmin/data/nginx-proxy-manager/data/logs/fallback_http_access.log
+maxretry = 3
+findtime = 600
+bantime  = 3600
+banaction = iptables-multiport

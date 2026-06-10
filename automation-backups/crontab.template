@@ -1,0 +1,11 @@
+# ==============================================================================
+# Production Cron Job Installation Template
+# ==============================================================================
+# Instructions:
+# 1. Open your system crontab configuration with: sudo crontab -e
+# 2. Append the execution line below to the bottom of the file.
+# 3. Save and exit. Ensure the backup.sh script has executable permissions.
+# ==============================================================================
+
+# Schedule: Runs daily at exactly 00:00 (Midnight)
+0 0 * * * /home/vmadmin/backup.sh

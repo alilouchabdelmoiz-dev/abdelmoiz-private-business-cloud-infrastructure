@@ -1,0 +1,661 @@
+setting up ufw
+
+
+vmadmin@SVR-01:~$ which ufw
+/usr/sbin/ufw
+
+to allow ssh 
+vmadmin@SVR-01:~$ sudo ufw allow openSSH
+[sudo: authenticate] Password:
+Rules updated
+Rules updated (v6)
+vmadmin@SVR-01:~$ sudo ufw enable
+Command may disrupt existing ssh connections. Proceed with operation (y|n)? y
+Firewall is active and enabled on system startup
+vmadmin@SVR-01:~$
+
+
+allowing port 9100 (node_exporter) only from SVR-02 ip_adress on SVR-01 and SVR-03
+
+vmadmin@SVR-03:~$ sudo ufw allow from [my SVR-02 ip adress] to any port 9100 proto tcp
+Rule added
+vmadmin@SVR-03:~$
+vmadmin@SVR-01:~$ sudo ufw allow from [my SVR-02 ip adress] to any port 9100 proto tcp
+Rule added
+
+opening Prometheus and gravana ports on VR-02
+
+vmadmin@SVR-02:~$ sudo ufw allow 3000/tcp
+Rule added
+Rule added (v6)
+vmadmin@SVR-02:~$ sudo ufw allow 9090/tcp
+Rule added
+Rule added (v6)
+vmadmin@SVR-02:~$
+
+opening nginx port on SVR-01
+
+vmadmin@SVR-01:~$ sudo ufw allow 80/tcp
+Rule added
+Rule added (v6)
+vmadmin@SVR-01:~$ sudo ufw allow 443/tcp
+Rule added
+Rule added (v6)
+
+
+To                         Action      From
+--                         ------      ----
+22/tcp (OpenSSH)           ALLOW IN    Anywhere
+22/tcp                     ALLOW IN    Anywhere
+9100/tcp                   ALLOW IN    [my SVR-02 ip adress]
+80/tcp                     ALLOW IN    Anywhere
+443/tcp                    ALLOW IN    Anywhere
+22/tcp (OpenSSH (v6))      ALLOW IN    Anywhere (v6)
+22/tcp (v6)                ALLOW IN    Anywhere (v6)
+80/tcp (v6)                ALLOW IN    Anywhere (v6)
+443/tcp (v6)               ALLOW IN    Anywhere (v6)
+
+vmadmin@SVR-02:~$  sudo ufw status verbose
+Status: active
+Logging: on (low)
+Default: deny (incoming), allow (outgoing), deny (routed)
+New profiles: skip
+
+To                         Action      From
+--                         ------      ----
+22/tcp (OpenSSH)           ALLOW IN    Anywhere
+22/tcp                     ALLOW IN    Anywhere
+80/tcp                     ALLOW IN    Anywhere
+443/tcp                    ALLOW IN    Anywhere
+3000/tcp                   ALLOW IN    Anywhere
+9090/tcp                   ALLOW IN    Anywhere
+22/tcp (OpenSSH (v6))      ALLOW IN    Anywhere (v6)
+22/tcp (v6)                ALLOW IN    Anywhere (v6)
+80/tcp (v6)                ALLOW IN    Anywhere (v6)
+443/tcp (v6)               ALLOW IN    Anywhere (v6)
+3000/tcp (v6)              ALLOW IN    Anywhere (v6)
+9090/tcp (v6)              ALLOW IN    Anywhere (v6)
+
+--                         ------      ----
+22/tcp (OpenSSH)           ALLOW IN    Anywhere
+22/tcp                     ALLOW IN    Anywhere
+9100/tcp                   ALLOW IN    [my SVR-02 ip adress]
+80/tcp                     ALLOW IN    Anywhere
+443/tcp                    ALLOW IN    Anywhere
+22/tcp (OpenSSH (v6))      ALLOW IN    Anywhere (v6)
+22/tcp (v6)                ALLOW IN    Anywhere (v6)
+80/tcp (v6)                ALLOW IN    Anywhere (v6)
+443/tcp (v6)               ALLOW IN    Anywhere (v6)
+
+
+Setting up tailscale on all servers
+
+vmadmin@SVR-01:~$ curl -fsSL https://tailscale.com/install.sh | sh
+
+Installing Tailscale for ubuntu resolute, using method apt
+...
++ [ false = true ]
++ set +x
+Installation complete! Log in to start using Tailscale by running:
+
+sudo tailscale up
+
+vmadmin@SVR-01:~$ sudo tailscale up
+
+To authenticate, visit:
+
+        https://login.tailscale.com/a/[link]
+
+Success.
+
+vmadmin@SVR-01:~$ curl -fsSL https://tailscale.com/install.sh | sh
+
+Installing Tailscale for ubuntu resolute, using method apt
+...
++ [ false = true ]
++ set +x
+Installation complete! Log in to start using Tailscale by running:
+
+sudo tailscale up
+
+vmadmin@SVR-01:~$ sudo tailscale up
+
+To authenticate, visit:
+
+        https://login.tailscale.com/a/[link]
+
+Success.
+
+vmadmin@SVR-02:~$ curl -fsSL https://tailscale.com/install.sh | sh
+
+Installing Tailscale for ubuntu resolute, using method apt
+...
++ [ false = true ]
++ set +x
+Installation complete! Log in to start using Tailscale by running:
+
+sudo tailscale up
+
+vmadmin@SVR-03
+:~$ sudo tailscale up
+
+To authenticate, visit:
+
+        https://login.tailscale.com/a/[link]
+
+Success.
+
+
+for better security I'm pivoting from SVR-02 direct ip address to tailscale's ip address
+tailscale ip -4
+[ip adress]
+
+deleting the former rule
+
+vmadmin@SVR-01:~$ sudo ufw delete allow from [my SVR-02 ip adress] to any port 9100 proto tcp
+[sudo: authenticate] Password:
+Rule deleted
+
+vmadmin@SVR-01:~$ sudo ufw allow in on tailscale0 from [SVR-02_TAILSCALE_IP] to any port 9100 proto tcp
+
+Rule added
+vmadmin@SVR-01:~$
+
+
+vmadmin@SVR-03:~$ sudo ufw delete allow from [my SVR-02 ip adress] to any port 9100 proto tcp
+Rule deleted
+vmadmin@SVR-03:~$ sudo ufw allow in on tailscale0 from [SVR-02_TAILSCALE_IP] to any port 9100 proto 
+[sudo: authenticate] Password:
+Rule added
+
+now nginx, I'm going to use nginx to reverse proxy each app to open on 80 p using the ip addresses I got from tailsccale for security
+
+
+[check pictures]
+
+also I have to edit hosts on my windows machine as so it reconises them
+
+
+[my windows tailscale ip adress]    cloud
+[my windows tailscale ip adress]    grafana
+[my windows tailscale ip adress]    prom
+
+I'm going to edit ufw so it takes the new modifications aligning with tailscale ip addresses and implying Out-of-Band (OOB) Management as my original c ip addresses in case tailscale fails 
+(I acknowledge these are VM macjines and odn't need to go through tailscale since thy are on their own private network, but I'm aiming to mimic a buisess infrastructure at my beat ability) 
+
+
+vmadmin@SVR-01:~$ # 1. Reset to build a clean, bulletproof list
+sudo ufw reset
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+
+# 2. PRIMARY: Tailscale Access (Encrypted Tunnel)
+sudo ufw allow from [my windows tailscale ip adress] to any port 22 proto tcp
+sudo ufw allow from [my windows tailscale ip adress] to any port 80 proto tcp
+sudo ufw allow from [my windows tailscale ip adress] to any port 443 proto tcp
+
+# 3. FALLBACK: Local Windows Host-Only Access (Emergency Backdoor)
+sudo ufw allow from [my windows ip adress] to any port 22 proto tcp
+sudo ufw allow from [my windows ip adress] to any port 80 proto tcp
+sudo ufw allow from [my windows ip adress] to any port 443 proto tcp
+
+# 4. MONITORING: Allow SVR-02 to scrape metrics via Tailscale
+sudo ufw allow from [my tailscale SVR-02 ip adress] to any port 9100 proto tcp
+
+sudo ufw enable
+Resetting all rules to installed defaults. This may disrupt existing ssh
+connections. Proceed with operation (y|n)? y
+Backing up 'user.rules' to '/etc/ufw/user.rules.20260607_120737'
+Backing up 'before.rules' to '/etc/ufw/before.rules.20260607_120737'
+Backing up 'after.rules' to '/etc/ufw/after.rules.20260607_120737'
+Backing up 'user6.rules' to '/etc/ufw/user6.rules.20260607_120737'
+Backing up 'before6.rules' to '/etc/ufw/before6.rules.20260607_120737'
+Backing up 'after6.rules' to '/etc/ufw/after6.rules.20260607_120737'
+
+Default incoming policy changed to 'deny'
+(be sure to update your rules accordingly)
+Default outgoing policy changed to 'allow'
+(be sure to update your rules accordingly)
+Rules updated
+Rules updated
+Rules updated
+Rules updated
+Rules updated
+Rules updated
+Rules updated
+Command may disrupt existing ssh connections. Proceed with operation (y|n)? y
+Firewall is active and enabled on system startup 
+
+vmadmin@SVR-02:~$ # 1. Reset
+sudo ufw reset
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+
+# 2. PRIMARY: Tailscale SSH
+sudo ufw allow from [my windows tailscale ip adress] to any port 22 proto tcp
+
+# 3. FALLBACK: Windows Host-Only SSH
+sudo ufw allow from [my windows ip adress] to any port 22 proto tcp
+
+# 4. CORE ROUTING: Allow Nginx Proxy (SVR-01) to forward app web traffic
+sudo ufw allow from [my tailscale SVR-01 ip adress] to any port 80 proto tcp
+sudo ufw allow from [my tailscale SVR-01 ip adress] to any port 443 proto tcp
+
+# 5. MONITORING: Allow SVR-02 to collect system performance data
+sudo ufw allow from [my tailscale SVR-02 ip adress] to any port 9100 proto tcp
+
+sudo ufw enable
+Resetting all rules to installed defaults. This may disrupt existing ssh
+connections. Proceed with operation (y|n)? y
+Backing up 'user.rules' to '/etc/ufw/user.rules.20260607_120806'
+Backing up 'before.rules' to '/etc/ufw/before.rules.20260607_120806'
+Backing up 'after.rules' to '/etc/ufw/after.rules.20260607_120806'
+Backing up 'user6.rules' to '/etc/ufw/user6.rules.20260607_120806'
+Backing up 'before6.rules' to '/etc/ufw/before6.rules.20260607_120806'
+Backing up 'after6.rules' to '/etc/ufw/after6.rules.20260607_120806'
+
+Default incoming policy changed to 'deny'
+(be sure to update your rules accordingly)
+Default outgoing policy changed to 'allow'
+(be sure to update your rules accordingly)
+Rules updated
+Rules updated
+Rules updated
+Rules updated
+Rules updated
+Command may disrupt existing ssh connections. Proceed with operation (y|n)? y
+Firewall is active and enabled on system startup
+
+
+vmadmin@SVR-03:~$ # 1. Reset
+sudo ufw reset
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+
+# 2. PRIMARY: Tailscale SSH
+sudo ufw allow from [my windows tailscale ip adress] to any port 22 proto tcp
+
+# 3. FALLBACK: Windows Host-Only SSH
+sudo ufw allow from [my windows ip adress] to any port 22 proto tcp
+
+# 4. CORE ROUTING: Allow Nginx Proxy (SVR-01) to forward app web traffic
+sudo ufw allow from [my tailscale SVR-01 ip adress] to any port 80 proto tcp
+sudo ufw allow from [my tailscale SVR-01 ip adress] to any port 443 proto tcp
+
+# 5. MONITORING: Allow SVR-02 to collect system performance data
+sudo ufw allow from [my tailscale SVR-02 ip adress] to any port 9100 proto tcp
+
+sudo ufw enable
+Resetting all rules to installed defaults. This may disrupt existing ssh
+connections. Proceed with operation (y|n)? y
+Backing up 'user.rules' to '/etc/ufw/user.rules.20260607_122626'
+Backing up 'before.rules' to '/etc/ufw/before.rules.20260607_122626'
+Backing up 'after.rules' to '/etc/ufw/after.rules.20260607_122626'
+Backing up 'user6.rules' to '/etc/ufw/user6.rules.20260607_122626'
+Backing up 'before6.rules' to '/etc/ufw/before6.rules.20260607_122626'
+Backing up 'after6.rules' to '/etc/ufw/after6.rules.20260607_122626'
+
+Default incoming policy changed to 'deny'
+(be sure to update your rules accordingly)
+Default outgoing policy changed to 'allow'
+(be sure to update your rules accordingly)
+Rules updated
+Rules updated
+Rules updated
+Rules updated
+Rules updated
+Command may disrupt existing ssh connections. Proceed with operation (y|n)? y
+Firewall is active and enabled on system startup
+
+also changed Prometheus config so this changes take effect
+
+
+
+vmadmin@SVR-02:~/prometheus-grafana-docker$ sudo docker restart prometheus
+Prometheus
+
+Prometheus ip up
+
+scrape_configs:
+  - job_name: "SVR-01-Core"
+    static_configs:
+      - targets: ["[my tailscale SVR-01 ip adress]:9100"]
+
+  - job_name: "SVR-03-core"
+    static_configs:
+      - targets: ["[my tailscale SVR-03 ip adress]:9100"]
+
+  - job_name: "watchtower"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+moving to back up now.
+
+vim .backup.sh
+
+#!/bin/bash
+
+# Configuration variables
+BACKUP_DIR="/media/backup-usb/svr01-backups"
+LOG_FILE="/var/log/svr01-backup.log"
+DATE=$(date '+%Y-%m-%d_%H-%M-%S')
+
+# Ensure backup destination directory exists
+mkdir -p "$BACKUP_DIR"
+
+echo "=== Backup Started at $DATE ===" >> "$LOG_FILE"
+
+# Backup system rules (/etc) and active container data using exact paths
+sudo rsync -avz --delete /etc "$BACKUP_DIR/" >> "$LOG_FILE" 2>&1
+sudo rsync -avz --delete /home/vmadmin/data/ "$BACKUP_DIR/data/" >> "$LOG_FILE" 2>&1
+
+if [ $? -eq 0 ]; then
+    echo "=== Backup Completed Successfully at $(date '+%Y-%m-%d_%H-%M-%S') ===" >> "$LOG_FILE"
+else
+    echo "!!! Backup FAILED at $(date '+%Y-%m-%d_%H-%M-%S') !!!" >> "$LOG_FILE"
+fi
+
+echo "----------------------------------------" >> "$LOG_FILE"
+
+this script backs up system config /etc and container files on /home/vmadmin/data/ (SVR-01)
+
+chmod +x /home/vmadmin/backup.sh
+
+sudo ./backup.sh
+
+
+checking feedback
+
+tail -n 20 /var/log/svr01-backup.log
+
+vmadmin@SVR-01:~$ tail -n 20 /var/log/svr01-backup.log
+nginx-proxy-manager/mysql/sys/x@0024statements_with_full_table_scans.frm
+nginx-proxy-manager/mysql/sys/x@0024statements_with_runtimes_in_95th_percentile.frm
+nginx-proxy-manager/mysql/sys/x@0024statements_with_sorting.frm
+nginx-proxy-manager/mysql/sys/x@0024statements_with_temp_tables.frm
+nginx-proxy-manager/mysql/sys/x@0024user_summary.frm
+nginx-proxy-manager/mysql/sys/x@0024user_summary_by_file_io.frm
+nginx-proxy-manager/mysql/sys/x@0024user_summary_by_file_io_type.frm
+nginx-proxy-manager/mysql/sys/x@0024user_summary_by_stages.frm
+nginx-proxy-manager/mysql/sys/x@0024user_summary_by_statement_latency.frm
+nginx-proxy-manager/mysql/sys/x@0024user_summary_by_statement_type.frm
+nginx-proxy-manager/mysql/sys/x@0024wait_classes_global_by_avg_latency.frm
+nginx-proxy-manager/mysql/sys/x@0024wait_classes_global_by_latency.frm
+nginx-proxy-manager/mysql/sys/x@0024waits_by_host_by_latency.frm
+nginx-proxy-manager/mysql/sys/x@0024waits_by_user_by_latency.frm
+nginx-proxy-manager/mysql/sys/x@0024waits_global_by_latency.frm
+
+sent 66,115,603 bytes  received 11,811 bytes  10,173,448.31 bytes/sec
+total size is 306,254,156  speedup is 4.63
+=== Backup Completed Successfully at 2026-06-07_14-01-41 ===
+----------------------------------------
+
+
+I'm adding 0 0 * * * /home/vmadmin/backup.sh to schedule the ackup scriopt to run everyday on 00:00
+
+ sudo crontab -e
+
+  GNU nano 8.7.1                                  /tmp/crontab.ltDcuJ/crontab
+# Edit this file to introduce tasks to be run by cron.
+#
+# Each task to run has to be defined through a single line
+# indicating with different fields when the task will be run
+# and what command to run for the task
+#
+# To define the time you can provide concrete values for
+# minute (m), hour (h), day of month (dom), month (mon),
+# and day of week (dow) or use '*' in these fields (for 'any').
+#
+# Notice that tasks will be started based on the cron's system
+# daemon's notion of time and timezones.
+#
+# Output of the crontab jobs (including errors) is sent through
+# email to the user the crontab file belongs to (unless redirected).
+#
+# For example, you can run a backup of all your user accounts
+# at 5 a.m every week with:
+# 0 5 * * 1 tar -zcf /var/backups/home.tgz /home/
+#
+# For more information see the manual pages of crontab(5) and cron(8)
+#
+# m h  dom mon dow   command
+0 0 * * * /home/vmadmin/backup.sh
+
+
+now to downloading feil2ban
+
+vmadmin@SVR-01:~$ sudo apt update && sudo apt install fail2ban -y
+[sudo: authenticate] Password:
+Hit:1 http://security.ubuntu.com/ubuntu resolute-security InRelease
+Hit:2 http://archive.ubuntu.com/ubuntu resolute InRelease
+Hit:3 http://archive.ubuntu.com/ubuntu resolute-updates InRelease
+Hit:4 http://archive.ubuntu.com/ubuntu resolute-backports InRelease
+Ign:5 https://pkgs.tailscale.com/stable/ubuntu resolute InRelease
+Hit:6 https://download.docker.com/linux/ubuntu resolute InRelease
+Get:5 https://pkgs.tailscale.com/stable/ubuntu resolute InRelease
+Fetched 6,584 B in 59s (112 B/s)
+4 packages can be upgraded. Run 'apt list --upgradable' to see them.
+The following package was automatically installed and is no longer required:
+  networkd-dispatcher
+Use 'sudo apt autoremove' to remove it.
+
+Installing:
+  fail2ban
+
+Installing dependencies:
+  python3-pyasyncore  python3-pyinotify  whois
+
+Suggested packages:
+  mailx  monit  sqlite3  python-pyinotify-doc
+
+Summary:
+  Upgrading: 0, Installing: 4, Removing: 0, Not Upgrading: 4
+  Download size: 510 kB
+  Space needed: 2,620 kB / 12.2 GB available
+
+Get:1 http://archive.ubuntu.com/ubuntu resolute/universe amd64 fail2ban all 1.1.0-9 [421 kB]
+Get:2 http://archive.ubuntu.com/ubuntu resolute/main amd64 python3-pyasyncore all 1.0.2-3build1 [10.4 kB]
+Get:3 http://archive.ubuntu.com/ubuntu resolute/main amd64 python3-pyinotify all 0.9.6-5build1 [25.5 kB]
+Get:4 http://archive.ubuntu.com/ubuntu resolute/main amd64 whois amd64 5.6.6 [52.5 kB]
+Fetched 510 kB in 17s (30.7 kB/s)
+Selecting previously unselected package fail2ban.
+(Reading database… 174500 files and directories currently installed.)
+Preparing to unpack …/fail2ban_1.1.0-9_all.deb…
+Unpacking fail2ban (1.1.0-9)…
+Selecting previously unselected package python3-pyasyncore.
+Preparing to unpack …/python3-pyasyncore_1.0.2-3build1_all.deb…
+Unpacking python3-pyasyncore (1.0.2-3build1)…
+Selecting previously unselected package python3-pyinotify.
+Preparing to unpack …/python3-pyinotify_0.9.6-5build1_all.deb…
+Unpacking python3-pyinotify (0.9.6-5build1)…
+Selecting previously unselected package whois.
+Preparing to unpack …/archives/whois_5.6.6_amd64.deb…
+Unpacking whois (5.6.6)…
+Setting up whois (5.6.6)…
+Setting up fail2ban (1.1.0-9)…
+Created symlink '/etc/systemd/system/multi-user.target.wants/fail2ban.service' → '/usr/lib/systemd/system/fail2ban.service'.
+Setting up python3-pyasyncore (1.0.2-3build1)…
+Setting up python3-pyinotify (0.9.6-5build1)…
+Processing triggers for man-db (2.13.1-1build1)…
+Scanning processes...
+Scanning linux images...
+
+Running kernel seems to be up-to-date.
+
+No services need to be restarted.
+
+No containers need to be restarted.
+
+No user sessions are running outdated binaries.
+
+No VM guests are running outdated hypervisor (qemu) binaries on this host.
+vmadmin@SVR-01:~$ sudo systemctl enable fail2ban
+Synchronizing state of fail2ban.service with SysV service script with /usr/lib/systemd/systemd-sysv-install.
+Executing: /usr/lib/systemd/systemd-sysv-install enable fail2ban
+
+
+
+since its best practice to isolate sshd.local file in a dict inside /etc/fail2ban/ instead of copying files
+
+sudo nano /etc/fail2ban/jail.d/sshd.local
+
+[DEFAULT]
+# Whitelist localhost and specific Windows Host IPs
+ignoreip = 127.0.0.1/8 ::1 [my tailscale windows ip adress] [my windows ip adress]
+
+# Global ban parameters
+bantime  = 1h
+findtime = 10m
+maxretry = 3
+
+# using UFW to  to drop malicious traffic
+banaction = ufw
+banaction_allports = ufw
+
+[sshd]
+enabled = true
+port    = ssh
+filter  = sshd
+logpath = %(sshd_log)s
+backend = %(sshd_backend)
+
+I got an error
+
+vmadmin@SVR-01:/etc/fail2ban$ sudo fail2ban-client status sshd
+2026-06-07 15:29:48,278 fail2ban                [10159]: ERROR   Failed to access socket path: /var/run/fail2ban/fail2ban.sock. Is fail2ban running?
+
+sudo tail -n 20 /var/log/fail2ban.log
+
+2026-06-07 15:27:27,205 fail2ban.actions        [9505]: NOTICE  [sshd] Flush ticket(s) with nftables
+
+the error it's still trying to run on nftables even though I configured it to use ufw
+
+turns out I'm running on old configurations I dont need to spicify logpaths and backend and filter
+[DEFAULT]
+# Whitelist localhost and specific Windows Host IPs
+ignoreip = 127.0.0.1/8 ::1 [my tailscale windows ip adress] [my windows ip adress]
+
+# Global ban parameters
+bantime  = 1h
+findtime = 10m
+maxretry = 3
+
+# using UFW to  to drop malicious traffic
+banaction = ufw
+banaction_allports = ufw
+
+[sshd]
+enabled = true
+port    = ssh
+
+also I need to removed fail2ban.sock because the server crashed and now its a dead lock stoping fail2back from starting
+
+sudo rm -f /var/run/fail2ban/fail2ban.sock
+
+
+success on all 3 servers
+
+vmadmin@SVR-01:/etc/fail2ban$ sudo fail2ban-client status sshd
+Status for the jail: sshd
+|- Filter
+|  |- Currently failed: 0
+|  |- Total failed:     0
+|  `- Journal matches:  _SYSTEMD_UNIT=ssh.service + _COMM=sshd
+`- Actions
+   |- Currently banned: 0
+   |- Total banned:     0
+   `- Banned IP list:
+
+vmadmin@SVR-02:/etc/fail2ban$ sudo fail2ban-client status sshd
+Status for the jail: sshd
+|- Filter
+|  |- Currently failed: 0
+|  |- Total failed:     0
+|  `- Journal matches:  _SYSTEMD_UNIT=ssh.service + _COMM=sshd
+`- Actions
+   |- Currently banned: 0
+   |- Total banned:     0
+   `- Banned IP list:
+vmadmin@SVR-03:/etc/fail2ban$ sudo fail2ban-client status sshd
+Status for the jail: sshd
+|- Filter
+|  |- Currently failed: 0
+|  |- Total failed:     0
+|  `- Journal matches:  _SYSTEMD_UNIT=ssh.service + _COMM=sshd
+`- Actions
+   |- Currently banned: 0
+   |- Total banned:     0
+   `- Banned IP list:
+
+
+making jail2ban for nginx on SVR-01 im going to set it up to read all logs and look for malicious activity then block them
+
+sudo nano /etc/fail2ban/jail.d/nginx-proxy.local
+
+
+[nginx-http-auth]
+enabled  = true
+filter   = nginx-http-auth
+
+logpath  = /home/vmadmin/data/nginx-proxy-manager/data/logs/*_access.log
+           /home/vmadmin/data/nginx-proxy-manager/data/logs/fallback_http_access.log
+maxretry = 3
+findtime = 600
+bantime  = 3600
+banaction = iptables-multiport
+
+
+vmadmin@SVR-01:~/data/nginx-proxy-manager/data/logs$ sudo systemctl restart fail2ban
+vmadmin@SVR-01:~/data/nginx-proxy-manager/data/logs$ sudo fail2ban-client status
+Status
+|- Number of jail:      2
+`- Jail list:   nginx-http-auth, sshd
+
+it worked
+
+
+I have found some issues after applying these changes
+
+Grafana isn't pulling information anymore 
+(check image)
+
+the solution I d=found is since Grafana and Prometheus running n the same container I should be using docker internal dns to connect them 
+its chamging the connection server url form this http://[my SVR-02 ip adress]:9090 to this 
+http://prometheus:9090.
+now its pulling metrics again 
+
+final check
+
+!! I got hit by Untrusted Domain issue while connecting to nextcloud.
+the issues is a need for  config.php update after cI after I changed to custom domain http://cloud/
+
+trusted_domains I added 'cloud' so nextcloud recognizes it
+trusted_proxies I add SVR-01 ip for Nextcloud to process incoming forwarded HTTP headers safely.
+overwrite I changed it to cloud with http protocol for recognition and navigation accuracy and concistency
+<?php
+$CONFIG = array (
+  'passwordsalt' => 'r9ByGFg4dcjrJ5hsRbqP/rxs0jZBAD',
+  'secret' => 'fTIjLoHrsPCjEOVqZdNHSVEgvnC5Eh9foSa/XDGlV6iV1pmr',
+  'trusted_domains' =>
+  array (
+    0 => '[my SVR-01 ip adress]:8080',
+    1 => '[my tailscale SVR-01 ip adress]',
+    3 => 'cloud',
+  ),
+  'trusted_proxies' => array('[my tailscale SVR-01 ip adress]'),
+  'overwritehost' => 'cloud',
+  'overwriteprotocol' => 'http',
+  'overwrite.cli.url' => 'http://cloud/',
+  'datadirectory' => '/var/www/html/data',
+  'dbtype' => 'mysql',
+  'version' => '33.0.4.1',
+  'instanceid' => 'oc3beg6110v0',
+  'dbname' => 'nextcloud',
+  'dbhost' => 'db:3306',
+  'dbtableprefix' => 'oc_',
+  'mysql.utf8mb4' => true,
+  'dbuser' => 'oc_oc_admin29',
+  'dbpassword' => ';l}8L+Z[ba+QTw3LMyv>16#?9GffL.',
+  'installed' => true,
+);
+            

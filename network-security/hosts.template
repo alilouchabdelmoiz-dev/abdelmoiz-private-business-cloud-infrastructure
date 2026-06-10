@@ -1,0 +1,15 @@
+# ==============================================================================
+# LOCAL DNS RESOLUTION CONFIGURATION TEMPLATE
+# ==============================================================================
+# Target Deployment: Management Client Operating System
+# File Path (Windows): C:\Windows\System32\drivers\etc\hosts
+# File Path (Linux/macOS): /etc/hosts
+#
+# Instructions:
+# 1. Replace the placeholder IP below with your Windows Machine's Tailscale IP.
+# 2. Append these lines to your system's hosts file using administrator privileges.
+# ==============================================================================
+
+[YOUR_WINDOWS_TAILSCALE_IP]    cloud
+[YOUR_WINDOWS_TAILSCALE_IP]    grafana
+[YOUR_WINDOWS_TAILSCALE_IP]    prom
